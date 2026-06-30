@@ -39,4 +39,4 @@ jobs:
           python -m py_compile fetch_data.py
 
       - name: Workflow Passed
-        run: echo "GitHub Actions completed successfully."
+        run: echo "GitHub Actions completed successfully."  
