@@ -1,21 +1,42 @@
 version: 0.2
 
 phases:
-
   install:
     runtime-versions:
       python: 3.11
 
     commands:
       - echo "Installing dependencies..."
-      - pip install -r requirements.txt
+      - pip install -r requirements.txt -t package
 
   build:
     commands:
-      - echo "Checking Python syntax..."
-      - python -m py_compile lambda_function.py
-      - python -m py_compile fetch_data.py
+      - echo "Building Earthquake Lambda..."
+      - mkdir earthquake_build
+      - cp -r earthquake earthquake_build/
+      - cp -r package/* earthquake_build/ || true
+      - cd earthquake_build
+      - zip -r ../earthquake.zip .
+      - cd ..
+
+      - echo "Building Weather Lambda..."
+      - mkdir weather_build
+      - cp -r weather weather_build/
+      - cp -r package/* weather_build/ || true
+      - cd weather_build
+      - zip -r ../weather.zip .
+      - cd ..
+
+      - echo "Building Employee Lambda..."
+      - mkdir employee_build
+      - cp -r employee employee_build/
+      - cp -r package/* employee_build/ || true
+      - cd employee_build
+      - zip -r ../employee.zip .
+      - cd ..
 
 artifacts:
   files:
-    - '**/*'
+    - earthquake.zip
+    - weather.zip
+    - employee.zip
