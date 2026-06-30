@@ -1,322 +1,394 @@
-# 🌍 Earthquake Serverless ETL Pipeline with CI/CD
+# 🌍 multi-source-serverless-etl-pipeline
 
-## Project Overview
+A production-style **Serverless ETL Pipeline** built using **AWS Lambda, Amazon S3, DynamoDB, CodePipeline, CodeBuild, and GitHub Actions**.
 
-This project demonstrates a real-world Serverless ETL (Extract, Transform, Load) pipeline built on AWS using earthquake data from the United States Geological Survey (USGS).
-
-The pipeline automatically processes earthquake events whenever a raw JSON file is uploaded to Amazon S3. AWS Lambda validates and transforms the data before loading clean records into Amazon DynamoDB. The project also includes GitHub Actions and AWS CodePipeline for Continuous Integration (CI).
+The project automatically processes multiple file formats uploaded to Amazon S3 and loads cleaned data into DynamoDB tables through an event-driven architecture.
 
 ---
 
-# Dataset Source
+# 📌 Project Overview
 
-USGS Earthquake API
+This project demonstrates a complete serverless data engineering workflow.
 
-https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson
+Whenever a file is uploaded to Amazon S3:
 
-Dataset Type:
+- S3 triggers the appropriate AWS Lambda function.
+- Lambda parses the uploaded file.
+- Data is validated and transformed.
+- Clean records are stored in DynamoDB.
+- CloudWatch stores execution logs.
+- GitHub + CodePipeline + CodeBuild automatically deploy code changes.
 
-- Earthquake Events
-- GeoJSON Format
-- Updated continuously
+The project currently supports three independent ETL pipelines:
 
----
-
-# Scenario
-
-Emergency management systems require recent earthquake information for monitoring and analytics.
-
-This project automatically:
-
-- Collects earthquake data
-- Stores raw data in Amazon S3
-- Cleans and validates records
-- Classifies earthquake severity
-- Stores clean records inside DynamoDB
-- Logs ETL execution details in CloudWatch
+- 🌍 Earthquake JSON
+- 🌦 Weather JSON
+- 👨‍💼 Employee CSV
 
 ---
 
-# Architecture
+# 🏗 Architecture
 
 ```
-                   USGS Earthquake API
-                           │
-                           ▼
-                  earthquake.json
-                           │
-                           ▼
-                 Amazon S3 (raw/)
-                           │
-                     S3 Event Trigger
-                           │
-                           ▼
-                   AWS Lambda ETL
-                           │
-        ┌──────────────────┴──────────────────┐
-        │                                     │
-        ▼                                     ▼
- Amazon DynamoDB                    CloudWatch Logs
- Clean Records                       Audit Summary
+                    Git Push
+                       │
+                       ▼
+                  GitHub Repository
+                       │
+                       ▼
+                 GitHub Webhook
+                       │
+                       ▼
+                 AWS CodePipeline
+                       │
+                       ▼
+                  AWS CodeBuild
+                       │
+      ┌────────────┬─────────────┬─────────────┐
+      ▼            ▼             ▼
+ Earthquake     Weather      Employee
+    Lambda       Lambda        Lambda
+      │            │             │
+      ▼            ▼             ▼
+ Validation   Validation   Validation
+      │            │             │
+      ▼            ▼             ▼
+ Transformation Transformation Transformation
+      │            │             │
+      ▼            ▼             ▼
+ DynamoDB      DynamoDB      DynamoDB
+      │            │             │
+      └────────────┴─────────────┘
+                   │
+                   ▼
+             CloudWatch Logs
 ```
 
 ---
 
-# AWS Services Used
+# 📂 Project Structure
 
-- Amazon S3
+```
+earthquake-serverless-etl/
+
+│
+├── earthquake/
+│   ├── config/
+│   ├── loaders/
+│   ├── parsers/
+│   ├── transform/
+│   ├── utils/
+│   ├── fetch_data.py
+│   └── lambda_function.py
+│
+├── weather/
+│   ├── loaders/
+│   ├── parsers/
+│   ├── transform/
+│   ├── weather_fetch.py
+│   └── lambda_function.py
+│
+├── employee/
+│   ├── loaders/
+│   ├── parsers/
+│   ├── transform/
+│   └── lambda_function.py
+│
+├── sampleData/
+│   ├── earthquake.json
+│   ├── weather.json
+│   └── employee.csv
+│
+├── screenshots/
+│
+├── .github/
+│   └── workflows/
+│
+├── buildspec.yml
+├── requirements.txt
+└── README.md
+```
+
+---
+
+# 🚀 Features
+
+## Earthquake Pipeline
+
+- Reads JSON files
+- Validates earthquake records
+- Calculates earthquake severity
+- Converts timestamps
+- Stores records in DynamoDB
+
+---
+
+## Weather Pipeline
+
+- Reads weather JSON
+- Extracts
+
+  - Temperature
+  - Wind Speed
+  - Timestamp
+
+- Stores latest weather record
+
+---
+
+## Employee Pipeline
+
+- Reads CSV
+- Validates employee records
+- Cleans employee data
+- Stores employee information
+
+---
+
+# ☁ AWS Services Used
+
 - AWS Lambda
+- Amazon S3
 - Amazon DynamoDB
 - Amazon CloudWatch
 - AWS IAM
-- GitHub
-- GitHub Actions
-- AWS CodeBuild
 - AWS CodePipeline
+- AWS CodeBuild
 
 ---
 
-# ETL Rules
+# 💻 Technologies
+
+- Python 3.11
+- boto3
+- JSON
+- CSV
+- Git
+- GitHub
+- GitHub Actions
+
+---
+
+# 📦 Supported Input Files
+
+## Earthquake
+
+```
+JSON
+```
+
+Uploaded to:
+
+```
+raw/earthquake/
+```
+
+---
+
+## Weather
+
+```
+JSON
+```
+
+Uploaded to:
+
+```
+raw/weather/
+```
+
+---
+
+## Employee
+
+```
+CSV
+```
+
+Uploaded to:
+
+```
+raw/employee/
+```
+
+---
+
+# 📊 DynamoDB Tables
+
+The project stores processed data inside three tables.
+
+| Table | Description |
+|--------|-------------|
+| earthquake_records | Earthquake information |
+| weather_records | Weather information |
+| employee_records | Employee information |
+
+---
+
+# ⚙ ETL Workflow
 
 ## Extract
 
-- Read raw GeoJSON file from Amazon S3.
-- Parse earthquake features.
+- Read uploaded file from Amazon S3
+
+---
 
 ## Transform
 
-Validation
-
-- Reject records without ID.
-- Reject records without magnitude.
-- Reject records without place.
-- Reject records without timestamp.
-- Reject records with invalid coordinates.
-
-Standardization
-
-- Trim place names.
-- Convert status to lowercase.
-- Convert numeric values to Decimal.
-- Format timestamps into UTC.
-
-Derived Field
-
-Severity is generated automatically.
-
-| Magnitude | Severity |
-|-----------|----------|
-| <2 | Micro |
-| 2-3.9 | Minor |
-| 4-4.9 | Light |
-| 5-5.9 | Moderate |
-| 6-6.9 | Strong |
-| ≥7 | Major |
+- Validate records
+- Remove invalid data
+- Standardize fields
+- Calculate derived values
 
 ---
 
-# DynamoDB Table Design
+## Load
 
-Table Name
-
-```
-earthquake_records
-```
-
-Partition Key
-
-```
-record_id (String)
-```
-
-Attributes
-
-- record_id
-- magnitude
-- place
-- status
-- tsunami
-- latitude
-- longitude
-- depth
-- severity
-- event_time
-
-Capacity Mode
-
-```
-On Demand
-```
+- Store processed records into DynamoDB
 
 ---
 
-# Testing Steps
+# 🔄 CI/CD Pipeline
 
-## Test 1
-
-Upload earthquake.json to
+The deployment process is fully automated.
 
 ```
-s3://earthquake--etl--bucket/raw/
-```
+Git Push
 
-Expected Result
-
-Lambda is triggered automatically.
-
----
-
-## Test 2
-
-Open CloudWatch Logs.
-
-Expected Result
-
-Audit summary should appear.
-
----
-
-## Test 3
-
-Open DynamoDB.
-
-Expected Result
-
-Clean earthquake records should be inserted.
-
----
-
-## Test 4
-
-Push code to GitHub.
-
-```
-git add .
-git commit -m "Test CI"
-git push origin master
-```
-
-Expected Result
-
-GitHub Actions executes successfully.
-
----
-
-## Test 5
-
-Open AWS CodePipeline.
-
-Expected Result
-
-Source stage succeeds.
-
-Build stage succeeds.
-
----
-
-# GitHub Actions Summary
-
-GitHub Actions automatically runs on every Push and Pull Request.
-
-Workflow Steps
-
-- Checkout Repository
-- Setup Python 3.11
-- Install Dependencies
-- Validate Lambda Syntax
-
----
-
-# AWS CodePipeline Summary
-
-Pipeline Name
-
-```
-earthquake-serverless-pipeline
-```
-
-Stages
-
-- GitHub Source
-- AWS CodeBuild Build
-
-Whenever code is pushed to GitHub:
+↓
 
 GitHub
 
 ↓
 
-AWS CodePipeline
+CodePipeline
 
 ↓
 
-AWS CodeBuild
+CodeBuild
 
 ↓
 
-Python Validation
+Build Lambda ZIPs
 
 ↓
 
-Build Success
-
----
-
-# ETL Flow
-
-1. Fetch earthquake data from the USGS Earthquake API.
-
-2. Save the raw GeoJSON file.
-
-3. Upload the file into the Amazon S3 `raw/` folder.
-
-4. Amazon S3 automatically triggers the Lambda function.
-
-5. Lambda reads the uploaded JSON file.
-
-6. Lambda validates every earthquake record.
-
-7. Invalid records are rejected.
-
-8. Valid records are standardized.
-
-9. Severity is calculated from earthquake magnitude.
-
-10. Clean records are written into Amazon DynamoDB.
-
-11. Lambda logs ETL statistics to Amazon CloudWatch.
-
----
-
-# Repository Structure
-
-```
-earthquake-serverless-etl
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-│
-├── screenshots/
-│
-├── sampleData/
-│   └── earthquake.json
-│
-├── lambda_function.py
-├── requirements.txt
-├── buildspec.yml
-├── fetch_data.py
-├── README.md
-└── .gitignore
+Deploy to AWS Lambda
 ```
 
+Every push to the **master** branch automatically deploys all Lambda functions.
+
 ---
 
-# Screenshots
+# 📁 Event Notifications
 
-- Amazon S3 Bucket
-- Lambda Success
+| Folder | Trigger |
+|----------|---------|
+| raw/earthquake/ | Earthquake Lambda |
+| raw/weather/ | Weather Lambda |
+| raw/employee/ | Employee Lambda |
+
+---
+
+# 📈 Logging
+
+CloudWatch Logs records:
+
+- Uploaded filename
+- Total records
+- Successful inserts
+- Failed records
+- Execution time
+- Errors
+
+---
+
+# 📸 Screenshots
+
+Place screenshots inside:
+
+```
+screenshots/
+```
+
+Suggested screenshots:
+
+- S3 Bucket
+- Lambda Functions
+- DynamoDB Tables
 - CloudWatch Logs
-- DynamoDB Records
+- CodePipeline
+- CodeBuild
 - GitHub Actions
-- AWS CodePipeline
+
+---
+
+# 🧪 Testing
+
+Upload sample files into S3.
+
+```
+raw/earthquake/earthquake.json
+```
+
+```
+raw/weather/weather.json
+```
+
+```
+raw/employee/employee.csv
+```
+
+The appropriate Lambda function will execute automatically.
+
+---
+
+# Future Improvements
+
+- Step Functions
+- EventBridge
+- SNS Notifications
+- SQS Dead Letter Queue
+- AWS Glue
+- Amazon Athena
+- Terraform
+- AWS CDK
+- Unit Testing
+- Docker Support
+
+---
+
+# Learning Outcomes
+
+This project demonstrates practical experience with:
+
+- Event-Driven Architecture
+- Serverless ETL
+- AWS Lambda
+- Amazon S3
+- DynamoDB
+- CloudWatch
+- IAM
+- CI/CD Pipelines
+- GitHub Actions
+- CodePipeline
+- CodeBuild
+- Python
+- Data Validation
+- Data Transformation
+
+---
+
+# Author
+
+**Dhruv Limbasiya**
+
+GitHub:
+
+https://github.com/dhruv-limbasiya
+
+---
+
+# License
+
+This project is licensed under the MIT License.
