@@ -1,39 +1,46 @@
 version: 0.2
 
 phases:
-  install:
-    runtime-versions:
-      python: 3.11
-
-    commands:
-      - echo "Installing dependencies..."
-      - pip install -r requirements.txt -t package
-
   build:
     commands:
-      - echo "Building Earthquake Lambda..."
+      - echo "Packaging Earthquake Lambda..."
+      - rm -rf earthquake_build
       - mkdir earthquake_build
-      - cp -r earthquake earthquake_build/
-      - cp -r package/* earthquake_build/ || true
+      - cp -r earthquake/* earthquake_build/
       - cd earthquake_build
       - zip -r ../earthquake.zip .
       - cd ..
 
-      - echo "Building Weather Lambda..."
+      - echo "Packaging Weather Lambda..."
+      - rm -rf weather_build
       - mkdir weather_build
-      - cp -r weather weather_build/
-      - cp -r package/* weather_build/ || true
+      - cp -r weather/* weather_build/
       - cd weather_build
       - zip -r ../weather.zip .
       - cd ..
 
-      - echo "Building Employee Lambda..."
+      - echo "Packaging Employee Lambda..."
+      - rm -rf employee_build
       - mkdir employee_build
-      - cp -r employee employee_build/
-      - cp -r package/* employee_build/ || true
+      - cp -r employee/* employee_build/
       - cd employee_build
       - zip -r ../employee.zip .
       - cd ..
+
+      - echo "Deploying Earthquake Lambda..."
+      - aws lambda update-function-code \
+          --function-name Earthquake_automated_pipeline \
+          --zip-file fileb://earthquake.zip
+
+      - echo "Deploying Weather Lambda..."
+      - aws lambda update-function-code \
+          --function-name Weather_ETL \
+          --zip-file fileb://weather.zip
+
+      - echo "Deploying Employee Lambda..."
+      - aws lambda update-function-code \
+          --function-name Employee_ETL \
+          --zip-file fileb://employee.zip
 
 artifacts:
   files:
