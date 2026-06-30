@@ -182,7 +182,7 @@ def lambda_handler(event, context):
 
         "body": json.dumps({
 
-            "message": "ETL Completed Successfully",
+            "message": "ETL Completed SuccessFully",
 
             "total_records": total_records,
 
