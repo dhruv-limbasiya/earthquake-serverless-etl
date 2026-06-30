@@ -33,10 +33,20 @@ jobs:
             pip install -r requirements.txt
           fi
 
-      - name: Check Python Syntax
+      - name: Check Earthquake Lambda
         run: |
-          python -m py_compile lambda_function.py
-          python -m py_compile fetch_data.py
+          python -m py_compile earthquake/lambda_function.py
+          python -m py_compile earthquake/fetch_data.py
+          find earthquake -name "*.py" -exec python -m py_compile {} \;
+
+      - name: Check Employee Lambda
+        run: |
+          find employee -name "*.py" -exec python -m py_compile {} \;
+
+      - name: Check Weather Lambda
+        run: |
+          python -m py_compile weather/weather_fetch.py
+          find weather -name "*.py" -exec python -m py_compile {} \;
 
       - name: Workflow Passed
-        run: echo "GitHub Actions completed successfully."  
+        run: echo "GitHub Actions completed successfully."
