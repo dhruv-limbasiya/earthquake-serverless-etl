@@ -386,9 +386,3 @@ This project demonstrates practical experience with:
 GitHub:
 
 https://github.com/dhruv-limbasiya
-
----
-
-# License
-
-This project is licensed under the MIT License.
