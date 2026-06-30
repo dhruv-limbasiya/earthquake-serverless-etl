@@ -86,7 +86,7 @@ def lambda_handler(event, context):
 
         "body": json.dumps({
 
-            "message": "Earthquake ETL Completed Successfully",
+            "message": "Earthquake ETL Completed Successfully.",
 
             "total_records": total_records,
 
